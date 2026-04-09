@@ -1,4 +1,15 @@
 #include "../include/server.h"
+struct dirent *direntp;
+mode_t st_mode;
+char type[128];
+char mtime[128];
+char atime[128];
+int filesize;
+struct stat info;
+char file_path[1024];
+DIR *dirp;
+char *dir_path;
+char serbuf[MAX];
 
 //默认PATH 现在要改成一个指定的path然后进行遍历操作
 //首先不需要指定路径，先固定死！
@@ -35,14 +46,14 @@ void get_file(char order[])
 
 	while (1)
 	{
-		memset(buf, 0, sizeof(buf));
-		int size = fread(buf, sizeof(char), MAX, fp);
+		memset(serbuf, 0, sizeof(serbuf));
+		int size = fread(serbuf, sizeof(char), MAX, fp);
 		if (0 == size)
 		{
 			fclose(fp);
 			break;
 		}
-		send(confd, buf, size, 0);
+		send(confd, serbuf, size, 0);
 	}
 }
 
@@ -60,14 +71,14 @@ void list_files()
 		return;
 	}
 
-	memset(buf, 0, sizeof(buf));
+	memset(serbuf, 0, sizeof(serbuf));
 	direntp = NULL;
 
 	//ls的输出格式 文件大小 最后访问时间 上一次修改时间 文件类型 文件名
 	//puts("FILE_SIZE\tLAST_ACCESS_TIME\t\tLAST_MODIFY_TIME\t\tFILE_TYPE\tFILE_NAME");
-	snprintf(buf, 1024, "FILE_SIZE\tLAST_ACCESS_TIME\t\tLAST_MODIFY_TIME\t\tFILE_TYPE\tFILE_NAME\n");
-	send(confd, buf, strlen(buf), 0);
-
+	snprintf(serbuf, 1024, "FILE_SIZE\tLAST_ACCESS_TIME\t\tLAST_MODIFY_TIME\t\tFILE_TYPE\tFILE_NAME\n");
+	send(confd, serbuf, strlen(serbuf), 0);
+		
 	while (1)
 	{
 		direntp = readdir(dirp);//默认读取的是../res下的内容
@@ -92,7 +103,7 @@ void list_files()
 		//得到文件的属性
 		stat(file_path, &info);
 		//设置大小
-		size = info.st_size;
+		filesize = info.st_size;
 		//最近的访问时间
 		strcpy(atime, ctime(&info.st_atime));
 		atime[strlen(atime) - 1] = 0;
@@ -112,15 +123,15 @@ void list_files()
 		else                        strcpy(type, "未知");
 
 		//服务器打印信息后续会使用会将输出日志重定向到log日志文件中！！！
-		//printf("%d\t\t%s\t%s\t%s\t\t%s\n", size, atime, mtime, type, direntp->d_name);
-
+		//printf("%d\t\t%s\t%s\t%s\t\t%s\n", filesize, atime, mtime, type, direntp->d_name);
+		
 		//这里当目录内容过多文件时，可能buf一次性装不完到完整的内容！！！,
 		//优化方法：每次只发送一条数据，然后这样的会双方的通信协议需要改变！！！(后续再修改，可以直接参考员原来的代码！！！)
-		/*snprintf(tmp, 1024, "%d\t\t%s\t%s\t%s\t\t%s\n", size, atime, mtime, type, direntp->d_name);*/
+		/*snprintf(tmp, 1024, "%d\t\t%s\t%s\t%s\t\t%s\n", filesize, atime, mtime, type, direntp->d_name);*/
 		/*strcat(buf, tmp);*/
-		memset(buf, 0, sizeof(buf));
-		snprintf(buf, 1024, "%d\t\t%s\t%s\t%s\t\t%s\n", size, atime, mtime, type, direntp->d_name);
-		send(confd, buf, strlen(buf), 0);
+		memset(serbuf, 0, sizeof(serbuf));
+		snprintf(serbuf, 1024, "%d\t\t%s\t%s\t%s\t\t%s\n", filesize, atime, mtime, type, direntp->d_name);
+		send(confd, serbuf, strlen(serbuf), 0);
 	}
 	closedir(dirp);
 }
@@ -157,10 +168,11 @@ void put_file(char order[], int len)
 
 	while (1)
 	{
-		memset(buf, 0, sizeof(buf));
-		int size =recv(confd, buf, MAX, 0);
+		memset(serbuf, 0, sizeof(serbuf));
+		int size =recv(confd, serbuf, MAX, 0);
 		if (0 == size) break;
-		fwrite(buf, sizeof(char), size, fp);
+		fwrite(serbuf, sizeof(char), size, fp);
+		fflush(fp);
 	}
 	fclose(fp);
 }

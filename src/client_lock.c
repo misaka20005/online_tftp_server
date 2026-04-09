@@ -1,5 +1,5 @@
-#include "lock.h"
-
+#include "../include/lock.h"
+size_t sizes = 0;
 static void encode(char buf[], int len, unsigned char key)
 {
 	for (int i = 0; i < len; i += 32) 
@@ -32,10 +32,10 @@ static int deal(char *srcfile, char *psw)
 	{
 		while (1)
 		{
-			if(len = fread(buf, sizeof(char), MAX, fp))
+			if(len = fread(clibuf, sizeof(char), MAX, fp))
 			{
-				encode(buf, len, psw[i]);
-				fwrite(buf, sizeof(char), len, newfp);
+				encode(clibuf, len, psw[i]);
+				fwrite(clibuf, sizeof(char), len, newfp);
 			}
 			else break;
 		}
@@ -43,7 +43,7 @@ static int deal(char *srcfile, char *psw)
 	    fseek(fp, 0, SEEK_SET);
 		sizes = 0;
 		len = 0;
-		memset(buf, 0, sizeof(buf));
+		memset(clibuf, 0, sizeof(clibuf));
 	}
 	
 	fclose(fp);

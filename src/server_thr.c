@@ -1,4 +1,4 @@
-#include "thr.h"
+#include "../include/thr.h"
 #include <stdio.h>
 
 //线程函数

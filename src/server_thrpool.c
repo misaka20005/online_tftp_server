@@ -1,4 +1,4 @@
-#include "thrpool.h"
+#include "../include/thrpool.h"
 
 //线程池对象{线程对象 + 描述符fd}
 thrpool_t pool[POOLMAX];

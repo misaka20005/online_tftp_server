@@ -1,6 +1,10 @@
 #include "../include/server.h"
 #include "../include/thr.h"
 #include "../include/thrpool.h"
+SAI seraddr;
+SAI cliaddr;
+socklen_t addrlen;
+int confd;
 
 //让其作为工作函数，而不是直接作为线程函数
 //用已经初始化就创建好的线程来回调该函数(线程池)
@@ -9,15 +13,15 @@
 void * worker(void * arg) 
 {
 	thrpool_t *this = (thrpool_t *)arg;
-	int confd = this->fd;
+	int fd = this->fd;
 	char order[128] = {0};
 	// memset(order, 0, sizeof(order));
 	//接收命令
-	int size = recv(confd, order, sizeof(order), 0);
+	int size = recv(fd, order, sizeof(order), 0);
 	if (0 == size) 
 	{
 		printf("peer exit.\n");
-		close(confd);
+		close(fd);
 		pthread_exit((void *)0);	
 	}
 	//判断命令是啥：有get put list
@@ -34,7 +38,7 @@ void * worker(void * arg)
 	{
 		list_files();//修改哈list的处理逻辑
 	}
-	close(confd);
+	close(fd);
 
 	//让线程池的该线程失效，挂起。
 	this->fd = INVALIDFD;
@@ -132,11 +136,11 @@ int main(int argc, const char * argv[])
 			{
 				if (0 == events[i].data.fd) 
 				{
-					fgets(buf, 1024, stdin);//有换行
+					fgets(serbuf, 1024, stdin);//有换行
 					//判断字符串是什么指令
 					//然后执行什么样的操作
-					fputs(buf, stdout);//这里先不进行扩展！！！
-					memset(buf, 0, sizeof(buf));
+					fputs(serbuf, stdout);//这里先不进行扩展！！！
+					memset(serbuf, 0, sizeof(serbuf));
 
 				}
 				else if (listenfd == events[i].data.fd) 

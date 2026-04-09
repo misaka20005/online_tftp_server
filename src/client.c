@@ -1,4 +1,7 @@
 #include "../include/client.h"
+char clibuf[MAX];
+int confd;
+SAI seraddr;
 
 void do_get(char order[])
 {
@@ -17,7 +20,7 @@ void do_get(char order[])
 		goto ERR;
 	}
 
-	memset(buf, 0, sizeof(buf));
+	memset(clibuf, 0, sizeof(clibuf));
 	confd = socket(AF_INET, SOCK_STREAM, 0);
 	if (0 > confd) 	err_log("do_get:socket", ERR);
 	if (0 > connect(confd, (SA *)&seraddr, sizeof(seraddr))) err_log("do_get:connect", ERR1);
@@ -28,7 +31,7 @@ void do_get(char order[])
 
 	while (1)
 	{
-		int size = recv(confd, buf, sizeof(buf), 0);
+		int size = recv(confd, clibuf, sizeof(clibuf), 0);
 		//这有两种情况：
 		//1.没有找到文件直接对方关闭套接字
 		//2.发送完成时对方关闭套接字
@@ -55,7 +58,7 @@ void do_get(char order[])
 			}
 		}
 
-		fwrite(buf, sizeof(char), size, fp);
+		fwrite(clibuf, sizeof(char), size, fp);
 		fflush(fp);
 	}
 ERR1:
@@ -80,7 +83,7 @@ void do_put(char order[])
 		goto ERR;
 	}
 
-	memset(buf, 0, sizeof(buf));
+	memset(clibuf, 0, sizeof(clibuf));
 	confd = socket(AF_INET, SOCK_STREAM, 0);
 	if (0 > confd) err_log("do_put:socket", ERR);
 	if (0 > connect(confd, (SA *)&seraddr, sizeof(seraddr))) err_log("do_put:connect", ERR1);
@@ -93,21 +96,21 @@ void do_put(char order[])
 		goto ERR1;
 	}
 	
-	strcpy(buf, order);
-	buf[strlen(order)] = '#';//命令的结束标识
-	send(confd, buf, strlen(buf), 0);
+	strcpy(clibuf, order);
+	clibuf[strlen(order)] = '#';//命令的结束标识
+	send(confd, clibuf, strlen(clibuf), 0);
 
 	while (1)
 	{
-		memset(buf, 0, sizeof(buf));
-		int size = fread(buf, sizeof(char), MAX, fp);
+		memset(clibuf, 0, sizeof(clibuf));
+		int size = fread(clibuf, sizeof(char), MAX, fp);
 		if (0 == size)
 		{
 			printf("put successfully.\n");
 			fclose(fp);
 			break;
 		}
-		send(confd, buf, size, 0);
+		send(confd, clibuf, size, 0);
 	}
 ERR1:
 	close(confd);
@@ -117,7 +120,7 @@ ERR:
 
 void do_list(char cmd[])
 {
-	memset(buf, 0, sizeof(buf));
+	memset(clibuf, 0, sizeof(clibuf));
 	confd = socket(AF_INET, SOCK_STREAM, 0);
 	if (0 > confd) err_log("do_list:socket", ERR);//直接return
 	if (0 > connect(confd, (SA *)&seraddr, sizeof(seraddr))) err_log("do_list:connect", ERR1);
@@ -127,10 +130,10 @@ void do_list(char cmd[])
 	int size = 0;
 	while (1)
 	{
-		memset(buf, 0, sizeof(buf));
-		size = recv(confd, buf, sizeof(buf), 0);
+		memset(clibuf, 0, sizeof(clibuf));
+		size = recv(confd, clibuf, sizeof(clibuf), 0);
 		if (0 == size) break;
-		puts(buf);
+		puts(clibuf);
 	}
 ERR1:
 	close(confd);
