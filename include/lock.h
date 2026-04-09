@@ -8,7 +8,7 @@
 #include<sqlite3.h>
 
 //unsigned char key;//默认是0
-size_t sizes;//默认是0
+extern size_t sizes;//默认是0
 
 //void hander(int);
 static void encode(char [], int, unsigned char);

@@ -9,7 +9,6 @@ struct stat info;
 char file_path[1024];
 DIR *dirp;
 char *dir_path;
-char serbuf[MAX];
 
 //默认PATH 现在要改成一个指定的path然后进行遍历操作
 //首先不需要指定路径，先固定死！
